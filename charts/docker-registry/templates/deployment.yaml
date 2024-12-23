@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: docker-registry
+  labels:
+    name: docker-registry
+    release: {{ .Release.Name }}
+spec:
+  containers:
+    - name: docker-registry-mirror
+      image: registry:2
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          ephemeral-storage: "1Gi"
+        limits:
+          ephemeral-storage: "1Gi"
+      env:
+        - name: REGISTRY_HTTP_SECRET
+          value: {{ uuidv4 | b64enc }}
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: "/etc/docker/registry/domain.crt"
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: "/etc/docker/registry/domain.key"
+        - name: REGISTRY_STORAGE_DELETE_ENABLED
+          value: "true"
+      volumeMounts:
+        - name: certs
+          mountPath: /etc/docker/registry
+        - name: docker-registry-persistent-storage
+          mountPath: /var/lib/registry
+        - name: daemon
+          mountPath: /etc/docker/
+    - name: docker-registry-local
+      image: registry:2
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          ephemeral-storage: "1Gi"
+        limits:
+          ephemeral-storage: "1Gi"
+      env:
+        - name: REGISTRY_HTTP_SECRET
+          value: {{ uuidv4 | b64enc }}
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: "/etc/docker/registry/domain.crt"
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: "/etc/docker/registry/domain.key"
+        - name: REGISTRY_STORAGE_DELETE_ENABLED
+          value: "true"
+        - name: REGISTRY_AUTH
+          value: htpasswd
+        - name: REGISTRY_AUTH_HTPASSWD_REALM
+          value: registry
+        - name: REGISTRY_AUTH_HTPASSWD_PATH
+          value: "/etc/docker/registry/htpasswd"
+      volumeMounts:
+        - name: local
+          mountPath: /etc/docker/registry
+        - name: docker-registry-persistent-storage
+          mountPath: /var/lib/registry
+  volumes:
+    - name: local
+      configMap:
+        name: local
+        items:
+          - key: domain.key
+            path: domain.key
+          - key: domain.crt
+            path: domain.crt
+          - key: htpasswd
+            path: htpasswd
+          - key: config.yml
+            path: config.yml
+    - name: daemon
+      configMap:
+        name: certs
+        items:
+          - key: daemon.json
+            path: daemon.json
+    - name: certs
+      configMap:
+        name: certs
+        items:
+          - key: domain.key
+            path: domain.key
+          - key: domain.crt
+            path: domain.crt
+          - key: htpasswd
+            path: htpasswd
+          - key: config.yml
+            path: config.yml
+    - name: docker-registry-persistent-storage
+      hostPath:
+        path: {{ .Values.docker.hostPath }}
+        type: DirectoryOrCreate

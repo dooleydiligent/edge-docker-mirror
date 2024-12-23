@@ -1,0 +1,60 @@
+{{- $files := .Files }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: certs
+  labels:
+    name: {{.Release.Name}}
+data:
+  domain.key: |
+    {{ $files.Get .Values.docker.key | nindent 4 | trim}}
+  domain.crt: |
+    {{ $files.Get .Values.docker.cert | nindent 4 | trim}}
+  htpasswd: |
+    {{ .Values.docker.htpasswd | b64dec }}
+  config.yml: |
+    version: 0.1
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5000
+      headers:
+        X-Content-Type-Options: [nosniff]
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3
+    proxy:
+      remoteurl: https://registry-1.docker.io
+    delete:
+      enabled: true
+  daemon.json: |
+    {
+      "registry-mirrors": ["https://registry-1.docker.io"]
+    }
+  local.yml: |
+    version: 0.1
+    log:
+      fields:
+        service: registry
+    storage:
+      cache:
+        blobdescriptor: inmemory
+      filesystem:
+        rootdirectory: /var/lib/registry
+    http:
+      addr: :5001
+      headers:
+        X-Content-Type-Options: [nosniff]
+    health:
+      storagedriver:
+        enabled: true
+        interval: 10s
+        threshold: 3

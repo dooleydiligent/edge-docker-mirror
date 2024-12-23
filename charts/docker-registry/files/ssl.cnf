@@ -1,0 +1,27 @@
+[req]
+default_bits  = 4096
+distinguished_name = req_distinguished_name
+req_extensions = req_ext
+x509_extensions = v3_req
+prompt = no
+[req_distinguished_name]
+countryName = US
+stateOrProvinceName = FL
+localityName = Micanopy
+organizationName = Tuscawilla Creek
+commonName = docker.##DOMAIN##
+[req_ext]
+subjectAltName = @alt_names
+[v3_req]
+subjectAltName = @alt_names
+[ san_env ]
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = docker-registry
+DNS.2 = docker.##DOMAIN##
+DNS.3 = docker-registry.##NAMESPACE##.svc.cluster.local
+DNS.4 = *.##DOMAIN##
+DNS.5 = ##NAMESPACE##
+DNS.6 = localhost
+IP.1 = 127.0.0.1
+IP.2 = ##IP##

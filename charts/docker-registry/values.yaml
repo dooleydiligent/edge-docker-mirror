@@ -1,0 +1,5 @@
+docker:
+  hostPath: "/mnt/docker"
+  cert: "test"
+  key: "test"
+  htpasswd: "test"
